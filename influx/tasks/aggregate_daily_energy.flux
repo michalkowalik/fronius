@@ -12,8 +12,8 @@
 //
 // Prerequisites:
 //   - Bucket "fronius_daily" must exist in InfluxDB (create manually in UI or CLI).
-//   - Bucket "fronius_1m" must contain measurements "powerflow" (field: pv_w)
-//     and "meter" (fields: e_consumed_wh, e_produced_wh).
+//   - Bucket "fronius_1m" must contain measurements "fronius_powerflow" (field: pv_w)
+//     and "fronius_meter" (fields: e_consumed_wh, e_produced_wh).
 
 import "timezone"
 
@@ -26,7 +26,7 @@ option location = timezone.location(name: "Europe/Berlin")
 pv_produced =
     from(bucket: "fronius_1m")
         |> range(start: -1d)
-        |> filter(fn: (r) => r._measurement == "powerflow" and r._field == "pv_w")
+        |> filter(fn: (r) => r._measurement == "fronius_powerflow" and r._field == "pv_w")
         |> integral(unit: 1s)
         |> map(
             fn: (r) => ({r with
@@ -43,7 +43,7 @@ pv_produced =
 grid_consumed =
     from(bucket: "fronius_1m")
         |> range(start: -1d)
-        |> filter(fn: (r) => r._measurement == "meter" and r._field == "e_consumed_wh")
+        |> filter(fn: (r) => r._measurement == "fronius_meter" and r._field == "e_consumed_wh")
         |> difference(nonNegative: true)
         |> sum()
         |> map(
@@ -58,7 +58,7 @@ grid_consumed =
 grid_exported =
     from(bucket: "fronius_1m")
         |> range(start: -1d)
-        |> filter(fn: (r) => r._measurement == "meter" and r._field == "e_produced_wh")
+        |> filter(fn: (r) => r._measurement == "fronius_meter" and r._field == "e_produced_wh")
         |> difference(nonNegative: true)
         |> sum()
         |> map(

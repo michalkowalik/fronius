@@ -1,1 +1,4 @@
 .env
+
+# Runtime data — generated at deploy time, must not be version-controlled
+data/
