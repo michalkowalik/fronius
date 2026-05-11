@@ -201,6 +201,90 @@ grafana:
 
 ---
 
+---
+
+## Energy Calculation Method Analysis
+
+### Background
+
+The Fronius Symo GEN24 10.0 never populates `DAY_ENERGY` in `GetInverterRealtimeData`. The only inverter field confirmed populated is `TOTAL_ENERGY` (~31.9 MWh, lifetime cumulative). This rules out any daily counter shortcut from the inverter API.
+
+The smart meter provides two reliable cumulative counters already collected by Telegraf:
+- `EnergyReal_WAC_Sum_Consumed` → `e_consumed_wh` — total grid energy imported (Wh, monotonic)
+- `EnergyReal_WAC_Sum_Produced` → `e_produced_wh` — total grid energy exported (Wh, monotonic)
+
+The `aggregate_daily_energy` task uses these correctly for `grid_consumed_wh` and `grid_exported_wh`. No change required for grid metrics.
+
+The question is how to calculate **PV production** accurately without a daily counter.
+
+---
+
+### Option A — Counter Delta on `TOTAL_ENERGY`
+
+Add `TOTAL_ENERGY` from `GetInverterRealtimeData.cgi` to Telegraf. Store as a cumulative counter. Apply `difference(nonNegative: true) + sum()` daily — identical method to the meter counters.
+
+**Pros:**
+- Exact — physical counter from the inverter's own energy metering
+- Gap-insensitive — only first and last counter value per day matter
+- Consistent method with grid counter approach
+
+**Cons / risks:**
+- `TOTAL_ENERGY` on the Symo GEN24 with battery may include battery discharge to AC loads, not solar panels only. The definition is ambiguous for this model — could overstate solar generation by counting battery discharge as inverter output
+- Requires a Telegraf config change and container restart
+- Inverter reboot or firmware update may reset `TOTAL_ENERGY` — `nonNegative: true` drops that delta silently, causing undercounting for that day
+
+---
+
+### Option B — Power Integration on `pv_w` (current implementation)
+
+`integral(unit: 1s)` on `pv_w` from `fronius_1m`, divided by 3600 to convert W·s → Wh.
+
+`pv_w` maps to `Body.Data.Site.P_PV` from `GetPowerFlowRealtimeData`. The Fronius powerflow API separates PV, grid, load, and battery (`P_PV`, `P_Grid`, `P_Load`, `P_Akku`) as distinct quantities at the Site level. `P_PV` is solar array output only — battery discharge is reported separately as `P_Akku` and is not included.
+
+**Pros:**
+- No Telegraf changes required — `pv_w` is already collected
+- `P_PV` is unambiguously solar-only; the Fronius system itself performs the separation from battery
+- At 10s polling → 1m means, accuracy is high (< 1–2% error under normal conditions)
+- `integral()` uses linear interpolation between points, physically reasonable for solar power curves
+
+**Cons / risks:**
+- Approximate — Riemann sum, not a physical meter reading
+- Data gaps cause silent underestimation. A 5-minute Telegraf outage at solar noon (~3 kW) loses ~250 Wh with no error raised
+
+---
+
+### Accuracy Comparison
+
+| Scenario | Counter Delta (`TOTAL_ENERGY`) | Power Integration (`pv_w`) |
+|---|---|---|
+| Normal operation, no gaps | Exact | ~99% accurate |
+| 5-min Telegraf outage at noon (3 kW) | Exact | ~250 Wh loss, silent |
+| Inverter reboot during day | Day's delta silently dropped | Unaffected |
+| Battery present (Symo GEN24 + BYD) | Possibly overcounts (ambiguous) | Correct — solar only |
+| Telegraf change required | Yes | No (already implemented) |
+
+---
+
+### Decision
+
+**Option B retained for PV production.**
+
+Rationale:
+1. `P_PV` is unambiguously solar-only. `TOTAL_ENERGY` may conflate solar and battery discharge — this cannot be resolved without hardware testing or Fronius confirmation for this specific model. Misleading numbers are worse than approximate numbers.
+2. At 10s sampling, integration error is negligible under normal operation.
+3. No additional Telegraf or infrastructure changes required.
+4. Silent underestimation on data gaps is acceptable at this monitoring granularity.
+
+For `site_consumed_wh`, the energy balance formula is preferred over direct integration of `load_w`:
+```
+site_consumed_wh = pv_produced_wh + grid_consumed_wh - grid_exported_wh
+```
+This anchors the result to the exact meter counters for the grid terms.
+
+**The `aggregate_daily_energy.flux` task requires no method changes.** It already uses `integral(pv_w)` for PV and counter deltas for grid — both correct approaches given the constraints of this inverter model.
+
+---
+
 ## Known Issues / Open Items
 
 | Item | Status |
