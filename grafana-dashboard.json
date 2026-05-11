@@ -1,270 +1,812 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_INFLUXDB",
-      "label": "InfluxDB",
-      "description": "InfluxDB 2.x data source (Flux query language)",
-      "type": "datasource",
-      "pluginId": "influxdb",
-      "pluginName": "InfluxDB"
-    }
-  ],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.0.0"
-    },
-    {
-      "type": "datasource",
-      "id": "influxdb",
-      "name": "InfluxDB",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    }
-  ],
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "description": "Fronius solar inverter and smart meter overview — powered by InfluxDB (Flux)",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
+  "id": 1,
   "links": [],
   "panels": [
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
-      "id": 100,
-      "title": "Power Flow — Live",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 6,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 500 },
-              { "color": "orange", "value": 2000 },
-              { "color": "red", "value": 5000 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current_dc {_start=\"2026-05-09 18:22:17.138 +0000 UTC\", _stop=\"2026-05-10 18:22:17.138 +0000 UTC\", url=\"http://192.168.178.70/solar_api/v1/GetStorageRealtimeData.cgi\"}"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "amp"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "I DC"
+              },
+              {
+                "id": "displayName",
+                "value": "IDC"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "v_dc"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "volt"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "VDC"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 105,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_battery\")\n  |> filter(fn: (r) => r._field == \"current_dc\" or r._field == \"v_dc\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Battery Current & Voltage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 7
+              }
+            ]
+          },
+          "unit": "%"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 106,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_battery\")\n  |> filter(fn: (r) => r._field == \"soc\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Battery SoC",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 107,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_battery\")\n  |> filter(fn: (r) => r._field == \"temp_cell\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Cell temperature",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Power Flow — Live",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500
+              },
+              {
+                "color": "orange",
+                "value": 2000
+              },
+              {
+                "color": "red",
+                "value": 5000
+              }
             ]
           },
           "unit": "watt"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 17
+      },
       "id": 1,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "title": "PV Generation",
-      "type": "stat",
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"pv_w\")\n  |> last()",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "PV Generation",
+      "type": "stat"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "mappings": [
-            { "options": { "from": -99999, "to": 0, "result": { "color": "green", "text": "Exporting" } }, "type": "range" },
-            { "options": { "from": 0, "to": 99999, "result": { "color": "red", "text": "Importing" } }, "type": "range" }
+            {
+              "options": {
+                "from": -99999,
+                "result": {
+                  "color": "green",
+                  "text": "Exporting"
+                },
+                "to": 0
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "color": "red",
+                  "text": "Importing"
+                },
+                "to": 99999
+              },
+              "type": "range"
+            }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
             ]
           },
           "unit": "watt"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 17
+      },
       "id": 2,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
       },
-      "title": "Grid Power (+ import / - export)",
-      "type": "stat",
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"grid_w\")\n  |> last()",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Grid Power (+ import / - export)",
+      "type": "stat"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null },
-              { "color": "light-blue", "value": 1000 },
-              { "color": "yellow", "value": 3000 },
-              { "color": "red", "value": 6000 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 17
+      },
+      "id": 4,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"autonomy_pct\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Autonomy",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "light-blue",
+                "value": 1000
+              },
+              {
+                "color": "yellow",
+                "value": 3000
+              },
+              {
+                "color": "red",
+                "value": 6000
+              }
             ]
           },
           "unit": "watt"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 21
+      },
       "id": 3,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "title": "Site Consumption",
-      "type": "stat",
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"load_w\")\n  |> last()",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Site Consumption",
+      "type": "stat"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
-          "max": 100,
-          "min": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "green", "value": 80 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
-          },
-          "unit": "percent"
+          }
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
-      "id": 4,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 21
       },
-      "title": "Autonomy",
-      "type": "gauge",
+      "id": 109,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"autonomy_pct\")\n  |> last()",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"grid_w\")\n  |> last()",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Power Grid ",
+      "type": "stat"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
           "max": 100,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "green", "value": 80 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
             ]
           },
           "unit": "percent"
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 21
+      },
       "id": 5,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
         "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
-      "title": "Self-Consumption",
-      "type": "gauge",
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\" and r._field == \"self_consumption_pct\")\n  |> last()",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Self-Consumption",
+      "type": "gauge"
     },
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
-      "id": 101,
-      "title": "Power Flow — History",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisBorderShow": false,
             "axisCenteredZero": true,
@@ -273,136 +815,381 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "fillOpacity": 11,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "never",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           },
           "unit": "watt"
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "pv_w" },
+            "matcher": {
+              "id": "byName",
+              "options": "pv_w"
+            },
             "properties": [
-              { "id": "displayName", "value": "PV Generation" },
-              { "id": "color", "value": { "fixedColor": "#FADE2A", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "PV Generation"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FADE2A",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "grid_w" },
+            "matcher": {
+              "id": "byName",
+              "options": "grid_w"
+            },
             "properties": [
-              { "id": "displayName", "value": "Grid (+ import / - export)" },
-              { "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Grid (+ import / - export)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E02F44",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "load_w" },
+            "matcher": {
+              "id": "byName",
+              "options": "load_w"
+            },
             "properties": [
-              { "id": "displayName", "value": "Site Consumption" },
-              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Site Consumption"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
             ]
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 6 },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
       "id": 10,
       "options": {
-        "legend": { "calcs": ["mean", "max", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "title": "PV / Grid / Load Power",
-      "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\")\n  |> filter(fn: (r) => r._field == \"pv_w\" or r._field == \"grid_w\" or r._field == \"load_w\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "PV / Grid / Load Power",
+      "type": "timeseries"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 101,
+      "title": "Power Flow — History",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "%",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "fillOpacity": 9,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "never",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
+          "mappings": [],
           "max": 100,
           "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "percent"
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "autonomy_pct" },
+            "matcher": {
+              "id": "byName",
+              "options": "autonomy_pct"
+            },
             "properties": [
-              { "id": "displayName", "value": "Autonomy" },
-              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Autonomy"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "self_consumption_pct" },
+            "matcher": {
+              "id": "byName",
+              "options": "self_consumption_pct"
+            },
             "properties": [
-              { "id": "displayName", "value": "Self-Consumption" },
-              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }
+              {
+                "id": "displayName",
+                "value": "Self-Consumption"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              }
             ]
           }
         ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 36
+      },
       "id": 11,
       "options": {
-        "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "title": "Autonomy & Self-Consumption",
-      "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_powerflow\")\n  |> filter(fn: (r) => r._field == \"autonomy_pct\" or r._field == \"self_consumption_pct\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Autonomy & Self-Consumption",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 1,
+          "min": -1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "yellow",
+                "value": 0.8
+              },
+              {
+                "color": "green",
+                "value": 0.95
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 36
+      },
+      "id": 21,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\" and r._field == \"pf_sum\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Power Factor",
+      "type": "gauge"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
       "id": 102,
       "title": "Smart Meter",
       "type": "row"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": true,
             "axisColorMode": "text",
             "axisLabel": "Power",
@@ -410,183 +1197,309 @@
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "never",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
           },
           "unit": "watt"
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "p_sum_w" },
-            "properties": [{ "id": "displayName", "value": "Real Power (W)" }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "q_sum_var" },
+            "matcher": {
+              "id": "byName",
+              "options": "p_sum_w"
+            },
             "properties": [
-              { "id": "displayName", "value": "Reactive Power (VAR)" },
-              { "id": "unit", "value": "voltampreactive" }
+              {
+                "id": "displayName",
+                "value": "Real Power (W)"
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "s_sum_va" },
+            "matcher": {
+              "id": "byName",
+              "options": "q_sum_var"
+            },
             "properties": [
-              { "id": "displayName", "value": "Apparent Power (VA)" },
-              { "id": "unit", "value": "voltampere" }
+              {
+                "id": "displayName",
+                "value": "Reactive Power (VAR)"
+              },
+              {
+                "id": "unit",
+                "value": "voltampreact"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "s_sum_va"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Apparent Power (VA)"
+              },
+              {
+                "id": "unit",
+                "value": "voltamp"
+              }
             ]
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 16, "x": 0, "y": 25 },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
       "id": 20,
       "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "title": "Meter — Real / Reactive / Apparent Power",
-      "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
           "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\")\n  |> filter(fn: (r) => r._field == \"p_sum_w\" or r._field == \"q_sum_var\" or r._field == \"s_sum_va\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Meter — Real / Reactive / Apparent Power",
+      "type": "timeseries"
     },
     {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
-          "max": 1,
-          "min": -1,
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.8 },
-              { "color": "green", "value": 0.95 }
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 25 },
-      "id": 21,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "title": "Power Factor",
-      "type": "gauge",
-      "targets": [
-        {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\" and r._field == \"pf_sum\")\n  |> last()",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Energy (Wh)",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
           },
           "unit": "watth"
         },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "e_consumed_wh" },
-            "properties": [
-              { "id": "displayName", "value": "Total Consumed (Wh)" },
-              { "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "e_produced_wh" },
-            "properties": [
-              { "id": "displayName", "value": "Total Exported (Wh)" },
-              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
-            ]
-          }
-        ]
+        "overrides": []
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 35 },
-      "id": 22,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 58
+      },
+      "id": 103,
       "options": {
-        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "none" }
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "title": "Meter — Cumulative Energy (Consumed vs Exported)",
-      "type": "timeseries",
+      "pluginVersion": "11.1.4",
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
-          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\")\n  |> filter(fn: (r) => r._field == \"e_consumed_wh\" or r._field == \"e_produced_wh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\")\n  |> filter(fn: (r) => r._field == \"e_produced_wh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Energy cumulative generated",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "fflmky6r1xgqoe"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 58
+      },
+      "id": 104,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "fflmky6r1xgqoe"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"fronius_meter\")\n  |> filter(fn: (r) => r._field == \"e_consumed_wh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Energy cumulated - consumed",
+      "type": "stat"
     }
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["fronius", "solar", "influxdb"],
+  "tags": [
+    "fronius",
+    "solar",
+    "influxdb"
+  ],
   "templating": {
     "list": [
       {
-        "current": { "selected": true, "text": "fronius_raw", "value": "fronius_raw" },
+        "current": {
+          "selected": false,
+          "text": "fronius_raw",
+          "value": "fronius_raw"
+        },
         "hide": 0,
         "includeAll": false,
         "label": "Bucket",
         "multi": false,
         "name": "bucket",
         "options": [
-          { "selected": true, "text": "fronius_raw", "value": "fronius_raw" },
-          { "selected": false, "text": "fronius_1m", "value": "fronius_1m" },
-          { "selected": false, "text": "fronius_1h", "value": "fronius_1h" }
+          {
+            "selected": true,
+            "text": "fronius_raw",
+            "value": "fronius_raw"
+          },
+          {
+            "selected": false,
+            "text": "fronius_1m",
+            "value": "fronius_1m"
+          },
+          {
+            "selected": false,
+            "text": "fronius_1h",
+            "value": "fronius_1h"
+          }
         ],
         "query": "fronius_raw,fronius_1m,fronius_1h",
+        "skipUrlSync": false,
         "type": "custom"
       }
     ]
   },
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "Fronius Solar & Smart Meter",
   "uid": "fronius-solar-01",
-  "version": 2
+  "version": 22,
+  "weekStart": ""
 }
