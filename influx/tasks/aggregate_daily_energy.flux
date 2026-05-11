@@ -15,10 +15,14 @@
 //   - Bucket "fronius_1m" must contain measurements "fronius_powerflow" (field: pv_w)
 //     and "fronius_meter" (fields: e_consumed_wh, e_produced_wh).
 
+import "date"
 import "timezone"
 
 option task = {name: "aggregate_daily_energy", every: 1d, offset: 5m}
 option location = timezone.location(name: "Europe/Berlin")
+
+// Start of the calendar day being aggregated (local midnight, Europe/Berlin).
+dayStart = date.truncate(t: date.sub(d: 1d, from: now()), unit: 1d)
 
 // ── PV produced ──────────────────────────────────────────────────────────────
 // integral(unit: 1s) integrates W over seconds → W·s. Divide by 3600 → Wh.
@@ -30,6 +34,7 @@ pv_produced =
         |> integral(unit: 1s)
         |> map(
             fn: (r) => ({r with
+                _time: dayStart,
                 _value: r._value / 3600.0,
                 _field: "pv_produced_wh",
                 _measurement: "energy_daily",
@@ -48,6 +53,7 @@ grid_consumed =
         |> sum()
         |> map(
             fn: (r) => ({r with
+                _time: dayStart,
                 _field: "grid_consumed_wh",
                 _measurement: "energy_daily",
             }),
@@ -63,6 +69,7 @@ grid_exported =
         |> sum()
         |> map(
             fn: (r) => ({r with
+                _time: dayStart,
                 _field: "grid_exported_wh",
                 _measurement: "energy_daily",
             }),
